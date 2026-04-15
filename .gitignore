@@ -2,8 +2,7 @@ archive/
 src/
 
 *.json
-*.js
-
+build.js
 dist/
 extension.zip
 
