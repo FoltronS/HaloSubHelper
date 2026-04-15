@@ -1,0 +1,13 @@
+# Normalize line endings to LF in the repo, checkout as-is
+* text=auto eol=lf
+
+# Explicitly LF for web/text files
+*.html text eol=lf
+*.css  text eol=lf
+*.js   text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+
+# Binary files — no line ending conversion
+*.png  binary
+*.zip  binary
