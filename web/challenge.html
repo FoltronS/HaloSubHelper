@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typing Challenge — Halofun Trainer</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* ── Layout ───────────────────────────────────────────────────────────────── */
+.page { display: flex; flex-direction: column; align-items: center; padding: 2rem 1rem 4rem; }
+.section { display: none; width: 100%; max-width: 700px; }
+.section.active { display: block; animation: fadeInUp 0.35s ease; }
+
+/* ── Mode Select ──────────────────────────────────────────────────────────── */
+#modeSelect { text-align: center; }
+#modeSelect h1 { margin-bottom: 0.4rem; }
+#modeSelect p { color: var(--text2); margin-bottom: 3rem; }
+
+.mode-pick-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-bottom: 2.5rem; }
+.mode-pick {
+  padding: 2rem;
+  border-radius: 16px;
+  background: rgba(26,26,53,0.7);
+  border: 2px solid var(--border);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+.mode-pick:hover { border-color: rgba(99,102,241,0.5); transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.4); }
+.mode-pick-icon { font-size: 2rem; margin-bottom: 0.8rem; }
+.mode-pick-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.3rem; }
+.mode-pick-title-zh { font-size: 0.72rem; color: var(--text3); margin-bottom: 0.7rem; }
+.mode-pick-desc { font-size: 0.85rem; color: var(--text2); line-height: 1.6; }
+.mode-pick-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 1rem; }
+.mode-pick-tag { padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.7rem; background: rgba(255,255,255,0.06); color: var(--text3); }
+
+/* Weak spots button */
+.weak-btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.65rem 1.4rem;
+  border-radius: 10px;
+  background: rgba(245,158,11,0.12);
+  border: 1px solid rgba(245,158,11,0.3);
+  color: #fcd34d; font-weight: 600; font-size: 0.9rem;
+  cursor: pointer; transition: background 0.2s;
+}
+.weak-btn:hover { background: rgba(245,158,11,0.22); }
+.weak-btn.hidden { display: none; }
+
+/* ── Tutorial Setup ───────────────────────────────────────────────────────── */
+#tutSetup { text-align: center; }
+#tutSetup h2 { margin-bottom: 0.5rem; }
+#tutSetup p { color: var(--text2); margin-bottom: 2rem; }
+
+.cat-select-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.8rem; margin-bottom: 2rem; }
+.cat-select-card {
+  padding: 1.1rem; border-radius: 12px;
+  background: rgba(26,26,53,0.6);
+  border: 2px solid var(--border);
+  cursor: pointer; text-align: center;
+  transition: all 0.2s;
+}
+.cat-select-card:hover { border-color: rgba(99,102,241,0.4); }
+.cat-select-card.selected { border-color: var(--accent); background: rgba(99,102,241,0.12); }
+.cat-select-icon { font-size: 1.6rem; margin-bottom: 0.4rem; }
+.cat-select-name { font-size: 0.85rem; font-weight: 600; }
+.cat-select-count { font-size: 0.72rem; color: var(--text3); margin-top: 0.2rem; }
+.cat-select-progress { display: flex; gap: 3px; justify-content: center; margin-top: 0.5rem; }
+.cat-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); }
+.cat-dot.done { background: var(--success); }
+.cat-dot.partial { background: var(--warn); }
+
+/* ── Tutorial Active ──────────────────────────────────────────────────────── */
+#tutActive {}
+
+.tut-header {
+  display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;
+}
+.tut-header-left { flex: 1; }
+.tut-header-title { font-size: 1rem; font-weight: 700; }
+.tut-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 0.2rem; }
+.tut-step-count { font-size: 0.8rem; color: var(--text3); }
+
+/* Intro card */
+.tut-intro-card {
+  padding: 1.8rem 2rem;
+  background: rgba(26,26,53,0.7);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  margin-bottom: 1rem;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.tut-intro-card.state-waiting { border-color: var(--border); }
+.tut-intro-card.state-success {
+  border-color: var(--success);
+  box-shadow: 0 0 28px rgba(16,185,129,0.25);
+  animation: glow-success 0.6s ease;
+}
+.tut-intro-card.state-error {
+  border-color: var(--error);
+  box-shadow: 0 0 20px rgba(239,68,68,0.2);
+  animation: shake 0.4s ease, glow-error 0.4s ease;
+}
+
+.tut-prompt-label {
+  font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text3); margin-bottom: 1.2rem;
+}
+
+.tut-action-label {
+  font-size: 1.25rem; font-weight: 700; color: var(--text); line-height: 1.4;
+  margin-bottom: 0.3rem;
+}
+.tut-action-zh { font-size: 0.9rem; color: var(--text2); margin-bottom: 1.5rem; }
+
+/* Key display in tutorial */
+.tut-keys {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.tut-keys.revealed {}
+.tut-keys kbd {
+  font-size: 1rem; padding: 0.35em 0.75em;
+  background: var(--surface2);
+  transition: all 0.2s;
+}
+.tut-keys kbd.pressed { background: var(--accent); border-color: var(--accent2); box-shadow: 0 0 14px rgba(99,102,241,0.5); color: #fff; }
+.tut-keys kbd.correct { background: var(--success); border-color: #059669; box-shadow: 0 0 14px rgba(16,185,129,0.5); color: #fff; }
+.tut-keys kbd.wrong   { background: var(--error);   border-color: #dc2626; color: #fff; }
+.tut-keys .plus { color: var(--text3); font-size: 0.85em; }
+
+.tut-status-msg {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.88rem; font-weight: 600; min-height: 1.5rem;
+}
+.tut-status-msg.success { color: var(--success); }
+.tut-status-msg.error   { color: var(--error); }
+.tut-status-msg.hint    { color: var(--text3); }
+
+/* Tip panel */
+.tut-tip-panel {
+  margin-top: 1rem;
+  padding: 0.8rem 1rem;
+  background: rgba(99,102,241,0.07);
+  border-left: 2px solid rgba(99,102,241,0.35);
+  border-radius: 0 8px 8px 0;
+  font-size: 0.85rem; color: var(--text2); line-height: 1.6;
+}
+.tut-tip-panel.hidden { display: none; }
+
+/* Tutorial controls */
+.tut-controls { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+.tut-skip-btn {
+  background: none; border: 1px solid var(--border); color: var(--text3);
+  padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; cursor: pointer;
+  transition: all 0.2s;
+}
+.tut-skip-btn:hover { border-color: var(--border2); color: var(--text2); }
+.tut-next-btn {
+  padding: 0.5rem 1.2rem; border-radius: 8px; font-size: 0.85rem;
+  font-weight: 600; border: none; cursor: pointer;
+  background: var(--accent); color: #fff;
+  display: none; transition: all 0.2s;
+}
+.tut-next-btn:hover { background: var(--accent2); }
+.tut-next-btn.visible { display: inline-flex; }
+
+/* Keyboard press hint */
+.press-hint {
+  text-align: center; padding: 0.5rem;
+  font-size: 0.78rem; color: var(--text3);
+  animation: fadeIn 0.3s ease;
+}
+.press-hint.hidden { display: none; }
+
+/* ── Tutorial Completion ──────────────────────────────────────────────────── */
+#tutComplete { text-align: center; }
+.complete-icon { font-size: 4rem; margin-bottom: 1rem; animation: pop 0.4s ease; }
+.complete-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.5rem; }
+.complete-sub { color: var(--text2); margin-bottom: 2rem; }
+.complete-stars { font-size: 2.5rem; margin-bottom: 1rem; }
+.complete-stats {
+  display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+.cstat { text-align: center; }
+.cstat-num { font-size: 1.8rem; font-weight: 700; }
+.cstat-label { font-size: 0.75rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
+.complete-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+
+/* ── Challenge Setup ──────────────────────────────────────────────────────── */
+#chalSetup { text-align: center; }
+#chalSetup h2 { margin-bottom: 0.5rem; }
+#chalSetup p { color: var(--text2); margin-bottom: 2rem; }
+
+.diff-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin-bottom: 1.5rem; }
+.diff-card {
+  padding: 1.2rem 0.8rem; border-radius: 12px;
+  background: rgba(26,26,53,0.6);
+  border: 2px solid var(--border);
+  cursor: pointer; text-align: center;
+  transition: all 0.2s;
+}
+.diff-card:hover { transform: translateY(-2px); }
+.diff-card.selected { border-color: var(--accent); background: rgba(99,102,241,0.1); }
+.diff-icon { font-size: 1.5rem; margin-bottom: 0.4rem; }
+.diff-name { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.2rem; }
+.diff-time { font-size: 0.75rem; color: var(--text2); }
+.diff-tag { font-size: 0.7rem; color: var(--text3); margin-top: 0.4rem; }
+
+.chal-cat-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-bottom: 1.5rem; }
+.chal-cat-toggle {
+  padding: 0.4rem 0.85rem; border-radius: 99px;
+  font-size: 0.8rem; font-weight: 500;
+  border: 1px solid var(--border); background: transparent; color: var(--text2);
+  cursor: pointer; transition: all 0.2s;
+}
+.chal-cat-toggle.on {
+  background: rgba(99,102,241,0.15);
+  border-color: rgba(99,102,241,0.4); color: #a5b4fc;
+}
+
+/* ── Challenge Active ─────────────────────────────────────────────────────── */
+#chalActive {}
+
+/* HUD */
+.hud {
+  display: flex; align-items: center; gap: 1.2rem; margin-bottom: 1.2rem; flex-wrap: wrap;
+}
+.hud-score { font-size: 1.4rem; font-weight: 800; }
+.hud-score span { font-size: 0.7rem; color: var(--text3); font-weight: 400; display: block; }
+.hud-streak {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.4rem 0.8rem; border-radius: 8px;
+  background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2);
+  font-size: 0.9rem; font-weight: 700; color: #fcd34d;
+  transition: all 0.2s;
+}
+.hud-streak.bump { animation: streak-bump 0.3s ease; }
+.hud-mult {
+  font-size: 0.7rem; padding: 0.15rem 0.45rem; border-radius: 4px;
+  background: rgba(245,158,11,0.2); color: #fbbf24; font-weight: 700;
+}
+.hud-lives { display: flex; gap: 0.3rem; font-size: 1.2rem; }
+.hud-lives .life.lost { opacity: 0.2; filter: grayscale(1); }
+.hud-spacer { flex: 1; }
+.hud-q-count { font-size: 0.8rem; color: var(--text3); }
+
+/* Timer */
+.timer-wrap { margin-bottom: 1.2rem; position: relative; }
+.timer-bar-bg { height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.timer-bar {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--success), var(--accent));
+  transition: background 0.5s;
+}
+.timer-bar.urgent { background: linear-gradient(90deg, var(--error), var(--warn)); }
+
+/* Question card */
+.question-card {
+  padding: 2.5rem 2rem;
+  background: rgba(26,26,53,0.7);
+  border: 2px solid var(--border);
+  border-radius: 18px;
+  text-align: center;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  min-height: 200px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.question-card.correct {
+  border-color: var(--success);
+  box-shadow: 0 0 32px rgba(16,185,129,0.3);
+  animation: glow-success 0.5s ease;
+}
+.question-card.wrong {
+  border-color: var(--error);
+  box-shadow: 0 0 24px rgba(239,68,68,0.2);
+  animation: shake 0.35s ease, glow-error 0.4s ease;
+}
+
+.q-cat-badge { margin-bottom: 1rem; }
+.q-action {
+  font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; line-height: 1.4;
+}
+.q-action-zh { font-size: 0.9rem; color: var(--text2); margin-bottom: 1rem; }
+.q-press-hint { font-size: 0.82rem; color: var(--text3); margin-top: 0.5rem; }
+.q-feedback-keys {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center;
+  margin-top: 1rem; opacity: 0;
+  transition: opacity 0.3s;
+}
+.q-feedback-keys.visible { opacity: 1; }
+.q-feedback-keys kbd { font-size: 0.95rem; }
+
+/* Scored flash */
+.score-flash {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3rem; font-weight: 900;
+  pointer-events: none; z-index: 200;
+  opacity: 0; transition: none;
+}
+.score-flash.show {
+  animation: score-burst 0.7s ease forwards;
+}
+@keyframes score-burst {
+  0%   { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+  30%  { transform: translate(-50%, -70%) scale(1.2); }
+  100% { opacity: 0; transform: translate(-50%, -90%) scale(1); }
+}
+
+/* ── Challenge End ────────────────────────────────────────────────────────── */
+#chalEnd { text-align: center; }
+.end-rank { font-size: 3.5rem; margin-bottom: 0.5rem; animation: pop 0.4s ease; }
+.end-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.3rem; }
+.end-sub { color: var(--text2); margin-bottom: 2rem; }
+.end-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0.8rem; margin-bottom: 2rem;
+}
+.end-stat {
+  padding: 1rem; border-radius: 12px;
+  background: rgba(26,26,53,0.6); border: 1px solid var(--border);
+}
+.end-stat-num { font-size: 1.6rem; font-weight: 800; }
+.end-stat-label { font-size: 0.72rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.2rem; }
+
+.weak-spots-section { margin-bottom: 2rem; text-align: left; }
+.weak-spots-title { font-size: 0.85rem; font-weight: 600; color: var(--text2); margin-bottom: 0.75rem; }
+.weak-spot-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  padding: 0.65rem 0.9rem; border-radius: 8px;
+  background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.15);
+  margin-bottom: 0.4rem;
+}
+.weak-spot-label { font-size: 0.85rem; color: var(--text); }
+.weak-spot-miss { font-size: 0.75rem; color: var(--error); font-weight: 600; }
+.end-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+
+/* ── Shared ───────────────────────────────────────────────────────────────── */
+.back-row {
+  display: flex; align-items: center; gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+.back-btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: none; border: none; color: var(--text2);
+  font-size: 0.85rem; cursor: pointer; transition: color 0.2s; padding: 0;
+}
+.back-btn:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-logo">
+    <div class="logo-icon">🎬</div>
+    Halofun Trainer
+  </div>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="wiki.html" class="nav-link">Wiki</a>
+    <a href="challenge.html" class="nav-link active">Challenge</a>
+  </div>
+</nav>
+
+<div class="page">
+
+<!-- ── Mode Select ──────────────────────────────────────────────────────── -->
+<div class="section active" id="modeSelect">
+  <h1 style="text-align:center;margin-bottom:0.4rem"><span class="gradient-text">Typing Challenge</span></h1>
+  <p style="text-align:center;color:var(--text2);margin-bottom:2.5rem">Build real muscle memory for every shortcut. <span style="color:var(--text3)">打字挑战 — 练习每一个快捷键</span></p>
+
+  <div class="mode-pick-cards">
+    <div class="mode-pick" id="pickTutorial">
+      <div class="mode-pick-icon">🎓</div>
+      <div class="mode-pick-title">Tutorial</div>
+      <div class="mode-pick-title-zh">教程模式</div>
+      <div class="mode-pick-desc">Learn one shortcut at a time. Each category guides you step by step with tips and instant feedback before you move on.</div>
+      <div class="mode-pick-tags">
+        <span class="mode-pick-tag">Guided</span>
+        <span class="mode-pick-tag">No timer</span>
+        <span class="mode-pick-tag">Per category</span>
+      </div>
+    </div>
+    <div class="mode-pick" id="pickChallenge">
+      <div class="mode-pick-icon">⚡</div>
+      <div class="mode-pick-title">Challenge</div>
+      <div class="mode-pick-title-zh">挑战模式</div>
+      <div class="mode-pick-desc">Timed quiz against the clock. Streaks multiply your score. Test yourself across all categories or focus on your weak spots.</div>
+      <div class="mode-pick-tags">
+        <span class="mode-pick-tag">Timed</span>
+        <span class="mode-pick-tag">Score + streaks</span>
+        <span class="mode-pick-tag">3 difficulties</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center">
+    <button class="weak-btn hidden" id="weakBtn">⚠️ Practice Weak Spots (<span id="weakCount">0</span>)</button>
+  </div>
+</div>
+
+<!-- ── Tutorial Setup ───────────────────────────────────────────────────── -->
+<div class="section" id="tutSetup">
+  <div class="back-row">
+    <button class="back-btn" onclick="showSection('modeSelect')">← Back</button>
+  </div>
+  <h2>Tutorial Mode <span style="font-size:0.6em;color:var(--text3);font-weight:400;">教程模式</span></h2>
+  <p>Pick a category to start learning its shortcuts one by one.</p>
+  <div class="cat-select-grid" id="tutCatGrid"></div>
+  <div style="text-align:center">
+    <button class="btn btn-primary" id="startTutBtn" onclick="startTutorial()">Start Tutorial →</button>
+  </div>
+</div>
+
+<!-- ── Tutorial Active ───────────────────────────────────────────────────── -->
+<div class="section" id="tutActive">
+  <div class="back-row">
+    <button class="back-btn" id="tutBackBtn">← Back to categories</button>
+    <div style="flex:1"></div>
+    <span class="tut-step-count" id="tutStepCount">1 / 6</span>
+  </div>
+
+  <div class="tut-header">
+    <div class="tut-header-left">
+      <div class="tut-header-title" id="tutCatTitle"></div>
+      <div class="tut-header-sub" id="tutCatSub"></div>
+    </div>
+  </div>
+
+  <div class="progress-bar-wrap" style="margin-bottom:1.5rem">
+    <div class="progress-bar-fill" id="tutProgressBar" style="width:0%"></div>
+  </div>
+
+  <div class="tut-intro-card state-waiting" id="tutCard">
+    <div class="tut-prompt-label" id="tutPhaseLabel">LEARN THIS SHORTCUT</div>
+
+    <div class="tut-action-label" id="tutActionEN"></div>
+    <div class="tut-action-zh" id="tutActionZH"></div>
+
+    <div class="tut-keys" id="tutKeysDisplay"></div>
+
+    <div class="tut-status-msg hint" id="tutStatusMsg">
+      <span id="tutStatusIcon">⌨️</span>
+      <span id="tutStatusText">Press the key combination shown above</span>
+    </div>
+  </div>
+
+  <div class="tut-tip-panel hidden" id="tutTipPanel"></div>
+
+  <div class="tut-controls">
+    <button class="tut-skip-btn" id="tutSkipBtn">Skip →</button>
+    <button class="tut-next-btn" id="tutNextBtn">Next shortcut →</button>
+  </div>
+  <div class="press-hint" id="tutPressHint">Press the key combination to continue</div>
+</div>
+
+<!-- ── Tutorial Complete ─────────────────────────────────────────────────── -->
+<div class="section" id="tutComplete">
+  <div class="complete-icon" id="completeEmoji">🎉</div>
+  <div class="complete-title" id="completeTitle">Category Complete!</div>
+  <div class="complete-sub" id="completeSub"></div>
+  <div class="complete-stars" id="completeStars"></div>
+  <div class="complete-stats">
+    <div class="cstat"><div class="cstat-num" id="cstatCorrect" style="color:var(--success)">-</div><div class="cstat-label">Correct</div></div>
+    <div class="cstat"><div class="cstat-num" id="cstatSkipped" style="color:var(--warn)">-</div><div class="cstat-label">Skipped</div></div>
+    <div class="cstat"><div class="cstat-num" id="cstatAccuracy" style="color:var(--accent)">-</div><div class="cstat-label">Accuracy</div></div>
+  </div>
+  <div class="complete-actions">
+    <button class="btn btn-ghost" onclick="showSection('tutSetup')">Another Category</button>
+    <button class="btn btn-primary" onclick="showSection('modeSelect')">Back to Menu</button>
+  </div>
+</div>
+
+<!-- ── Challenge Setup ───────────────────────────────────────────────────── -->
+<div class="section" id="chalSetup">
+  <div class="back-row">
+    <button class="back-btn" onclick="showSection('modeSelect')">← Back</button>
+  </div>
+  <h2>Challenge Mode <span style="font-size:0.6em;color:var(--text3);font-weight:400;">挑战模式</span></h2>
+  <p>Choose difficulty and categories, then press the right shortcut before time runs out.</p>
+
+  <div style="margin-bottom:1rem;font-size:0.82rem;font-weight:600;color:var(--text2);text-align:left;">Difficulty</div>
+  <div class="diff-cards">
+    <div class="diff-card selected" data-diff="easy">
+      <div class="diff-icon">🌱</div>
+      <div class="diff-name">Easy</div>
+      <div class="diff-time">8 seconds / question</div>
+      <div class="diff-tag">All categories · No pressure</div>
+    </div>
+    <div class="diff-card" data-diff="medium">
+      <div class="diff-icon">⚡</div>
+      <div class="diff-name">Medium</div>
+      <div class="diff-time">5 seconds / question</div>
+      <div class="diff-tag">Your choice of categories</div>
+    </div>
+    <div class="diff-card" data-diff="hard">
+      <div class="diff-icon">🔥</div>
+      <div class="diff-name">Hard</div>
+      <div class="diff-time">3 seconds / question</div>
+      <div class="diff-tag">All · Random order</div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:0.75rem;font-size:0.82rem;font-weight:600;color:var(--text2);text-align:left;">Categories</div>
+  <div class="chal-cat-grid" id="chalCatGrid"></div>
+
+  <div style="text-align:center;margin-top:1.5rem">
+    <button class="btn btn-primary" onclick="startChallenge()">Start Challenge →</button>
+  </div>
+</div>
+
+<!-- ── Challenge Active ──────────────────────────────────────────────────── -->
+<div class="section" id="chalActive">
+  <div class="hud">
+    <div class="hud-score">
+      <span>SCORE</span>
+      <span id="hudScore">0</span>
+    </div>
+    <div class="hud-streak" id="hudStreak">
+      🔥 <span id="hudStreakNum">0</span>
+      <span class="hud-mult" id="hudMult">×1</span>
+    </div>
+    <div class="hud-spacer"></div>
+    <div class="hud-lives" id="hudLives"></div>
+    <div class="hud-q-count" id="hudQCount">0 / 0</div>
+  </div>
+
+  <div class="timer-wrap">
+    <div class="timer-bar-bg">
+      <div class="timer-bar" id="timerBar"></div>
+    </div>
+  </div>
+
+  <div class="question-card" id="questionCard">
+    <div class="q-cat-badge" id="qCatBadge"></div>
+    <div class="q-action" id="qAction"></div>
+    <div class="q-action-zh" id="qActionZH"></div>
+    <div class="q-press-hint">Press the correct key combination</div>
+    <div class="q-feedback-keys" id="qFeedbackKeys"></div>
+  </div>
+</div>
+
+<!-- ── Challenge End ─────────────────────────────────────────────────────── -->
+<div class="section" id="chalEnd">
+  <div class="end-rank" id="endRank"></div>
+  <div class="end-title" id="endTitle"></div>
+  <div class="end-sub" id="endSub"></div>
+  <div class="end-stats" id="endStats"></div>
+  <div class="weak-spots-section" id="weakSpotsSection"></div>
+  <div class="end-actions">
+    <button class="btn btn-ghost" onclick="showSection('chalSetup')">Try Again</button>
+    <button class="btn btn-primary" onclick="showSection('modeSelect')">Main Menu</button>
+  </div>
+</div>
+
+</div><!-- .page -->
+
+<!-- Score flash -->
+<div class="score-flash" id="scoreFlash"></div>
+
+<script src="js/data.js"></script>
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+// State & helpers
+// ════════════════════════════════════════════════════════════════════════════
+
+function getStats() {
+  try { return JSON.parse(localStorage.getItem('halo-challenge-stats') || '{}'); }
+  catch { return {}; }
+}
+function saveStats(s) {
+  localStorage.setItem('halo-challenge-stats', JSON.stringify(s));
+}
+function recordResult(id, correct) {
+  const s = getStats();
+  if (!s[id]) s[id] = { correct: 0, attempts: 0 };
+  s[id].attempts++;
+  if (correct) s[id].correct++;
+  saveStats(s);
+}
+
+const MOD_KEYS = new Set(['Control','Shift','Alt','Meta','CapsLock','Tab']);
+
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function keysHtml(display, isSpecial) {
+  if (isSpecial) return display.map(k => `<kbd>${k}</kbd>`).join('<span class="plus"> / </span>');
+  return display.map(k => `<kbd>${k}</kbd>`).join('<span class="plus">+</span>');
+}
+
+function flashScore(text, color) {
+  const el = document.getElementById('scoreFlash');
+  el.textContent = text;
+  el.style.color = color;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Mode Select
+// ════════════════════════════════════════════════════════════════════════════
+
+document.getElementById('pickTutorial').addEventListener('click', () => showSection('tutSetup'));
+document.getElementById('pickChallenge').addEventListener('click', () => showSection('chalSetup'));
+
+// Weak spots
+function getWeakSpots(n = 5) {
+  const stats = getStats();
+  return SHORTCUTS
+    .filter(s => !s.isSpecial)
+    .map(s => {
+      const st = stats[s.id] || { correct: 0, attempts: 0 };
+      const miss = st.attempts - st.correct;
+      return { s, miss, attempts: st.attempts };
+    })
+    .filter(x => x.attempts > 0 && x.miss > 0)
+    .sort((a, b) => b.miss - a.miss)
+    .slice(0, n)
+    .map(x => x.s);
+}
+
+function checkWeakBtn() {
+  const weak = getWeakSpots();
+  const btn = document.getElementById('weakBtn');
+  document.getElementById('weakCount').textContent = weak.length;
+  btn.classList.toggle('hidden', weak.length === 0);
+}
+
+document.getElementById('weakBtn').addEventListener('click', () => {
+  challengeQueue = getWeakSpots();
+  startChallengeWithQueue('medium');
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// Tutorial
+// ════════════════════════════════════════════════════════════════════════════
+
+let tutCatId = null;
+let tutQueue = [];
+let tutIndex = 0;
+let tutCorrect = 0;
+let tutSkipped = 0;
+let tutWaiting = true; // waiting for keypress
+let tutDone = false;
+
+function buildTutCatGrid() {
+  const grid = document.getElementById('tutCatGrid');
+  grid.innerHTML = '';
+  const stats = getStats();
+
+  CATEGORIES.forEach(cat => {
+    const shorts = SHORTCUTS.filter(s => s.category === cat.id && !s.isSpecial);
+    const done = shorts.filter(s => (stats[s.id] || {}).attempts > 0).length;
+
+    const card = document.createElement('div');
+    card.className = 'cat-select-card' + (tutCatId === cat.id ? ' selected' : '');
+    card.dataset.catId = cat.id;
+
+    const dots = shorts.map(s => {
+      const st = stats[s.id] || { correct: 0, attempts: 0 };
+      let cls = '';
+      if (st.attempts > 0) cls = st.correct / st.attempts >= 0.7 ? 'done' : 'partial';
+      return `<div class="cat-dot ${cls}"></div>`;
+    }).join('');
+
+    card.innerHTML = `
+      <div class="cat-select-icon">${cat.icon}</div>
+      <div class="cat-select-name">${cat.en}</div>
+      <div style="font-size:0.7rem;color:var(--text3)">${cat.zh}</div>
+      <div class="cat-select-count">${shorts.length} shortcuts · ${done} practiced</div>
+      <div class="cat-select-progress">${dots}</div>
+    `;
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.cat-select-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      tutCatId = cat.id;
+    });
+    grid.appendChild(card);
+  });
+}
+
+function startTutorial() {
+  if (!tutCatId) {
+    // Pick first category by default
+    tutCatId = CATEGORIES[0].id;
+    document.querySelector('.cat-select-card').classList.add('selected');
+  }
+  const cat = CATEGORIES.find(c => c.id === tutCatId);
+  tutQueue = SHORTCUTS.filter(s => s.category === tutCatId && !s.isSpecial);
+  tutIndex = 0; tutCorrect = 0; tutSkipped = 0;
+
+  document.getElementById('tutCatTitle').textContent = `${cat.icon} ${cat.en}`;
+  document.getElementById('tutCatSub').textContent = cat.zh;
+
+  showSection('tutActive');
+  loadTutStep();
+}
+
+function loadTutStep() {
+  if (tutIndex >= tutQueue.length) {
+    finishTutorial();
+    return;
+  }
+
+  const s = tutQueue[tutIndex];
+  tutWaiting = true; tutDone = false;
+
+  // Header
+  document.getElementById('tutStepCount').textContent = `${tutIndex + 1} / ${tutQueue.length}`;
+  document.getElementById('tutProgressBar').style.width = `${(tutIndex / tutQueue.length) * 100}%`;
+
+  // Reset card state
+  const card = document.getElementById('tutCard');
+  card.className = 'tut-intro-card state-waiting';
+
+  // Phase label
+  document.getElementById('tutPhaseLabel').textContent = 'PRESS THIS SHORTCUT';
+
+  // Labels
+  document.getElementById('tutActionEN').textContent = s.label.en;
+  document.getElementById('tutActionZH').textContent = s.label.zh;
+
+  // Keys display
+  const kd = document.getElementById('tutKeysDisplay');
+  kd.innerHTML = keysHtml(s.display, s.isSpecial);
+  kd.querySelectorAll('kbd').forEach(k => { k.className = ''; });
+
+  // Status
+  setTutStatus('hint', '⌨️', 'Press the key combination shown above');
+
+  // Tip
+  const tip = document.getElementById('tutTipPanel');
+  tip.innerHTML = `<strong>💡 Tip:</strong> ${s.tip.en}<br><span style="color:var(--text3);font-size:0.78rem;margin-top:0.3rem;display:block">${s.tip.zh}</span>`;
+  tip.classList.remove('hidden');
+
+  // Controls
+  const nextBtn = document.getElementById('tutNextBtn');
+  nextBtn.classList.remove('visible');
+  document.getElementById('tutPressHint').classList.remove('hidden');
+
+  // Register listener
+  registerTutListener(s);
+}
+
+let currentTutListener = null;
+function registerTutListener(shortcut) {
+  if (currentTutListener) document.removeEventListener('keydown', currentTutListener, true);
+
+  currentTutListener = function(e) {
+    if (MOD_KEYS.has(e.key)) return;
+    if (!tutWaiting) return;
+    e.preventDefault(); e.stopPropagation();
+
+    if (matchesShortcut(e, shortcut.keys)) {
+      onTutCorrect(shortcut);
+    } else {
+      onTutWrong(shortcut, e);
+    }
+  };
+  document.addEventListener('keydown', currentTutListener, true);
+}
+
+function onTutCorrect(shortcut) {
+  tutWaiting = false; tutDone = true;
+  tutCorrect++;
+  recordResult(shortcut.id, true);
+
+  const card = document.getElementById('tutCard');
+  card.className = 'tut-intro-card state-success';
+
+  // Light up keys green
+  document.getElementById('tutKeysDisplay').querySelectorAll('kbd').forEach(k => {
+    k.classList.add('correct');
+  });
+
+  setTutStatus('success', '✅', 'Correct! Great job!');
+  document.getElementById('tutPressHint').classList.add('hidden');
+  document.getElementById('tutNextBtn').classList.add('visible');
+  document.getElementById('tutNextBtn').textContent =
+    tutIndex + 1 < tutQueue.length ? 'Next shortcut →' : 'See results →';
+}
+
+function onTutWrong(shortcut, e) {
+  // Don't record wrong for now — just shake and show hint
+  const card = document.getElementById('tutCard');
+  card.className = 'tut-intro-card state-error';
+  setTimeout(() => {
+    if (!tutDone) card.className = 'tut-intro-card state-waiting';
+  }, 500);
+
+  // Flash keys red briefly
+  const keys = document.getElementById('tutKeysDisplay').querySelectorAll('kbd');
+  keys.forEach(k => {
+    k.classList.add('wrong');
+    setTimeout(() => k.classList.remove('wrong'), 400);
+  });
+
+  setTutStatus('error', '❌', `Wrong. Try again — press ${shortcut.display.join(' + ')}`);
+}
+
+function setTutStatus(type, icon, text) {
+  const msg = document.getElementById('tutStatusMsg');
+  msg.className = 'tut-status-msg ' + type;
+  document.getElementById('tutStatusIcon').textContent = icon;
+  document.getElementById('tutStatusText').textContent = text;
+}
+
+document.getElementById('tutSkipBtn').addEventListener('click', () => {
+  if (currentTutListener) document.removeEventListener('keydown', currentTutListener, true);
+  tutSkipped++;
+  tutIndex++;
+  loadTutStep();
+});
+
+document.getElementById('tutNextBtn').addEventListener('click', () => {
+  if (currentTutListener) document.removeEventListener('keydown', currentTutListener, true);
+  tutIndex++;
+  loadTutStep();
+});
+
+document.getElementById('tutBackBtn').addEventListener('click', () => {
+  if (currentTutListener) document.removeEventListener('keydown', currentTutListener, true);
+  showSection('tutSetup');
+});
+
+function finishTutorial() {
+  if (currentTutListener) document.removeEventListener('keydown', currentTutListener, true);
+
+  document.getElementById('tutProgressBar').style.width = '100%';
+
+  const total = tutQueue.length;
+  const acc = tutCorrect + tutSkipped > 0 ? Math.round((tutCorrect / (tutCorrect + tutSkipped)) * 100) : 0;
+  const stars = acc >= 90 ? 3 : acc >= 60 ? 2 : 1;
+
+  document.getElementById('completeEmoji').textContent = stars === 3 ? '🏆' : stars === 2 ? '🎉' : '👍';
+  document.getElementById('completeTitle').textContent = 'Category Complete!';
+  document.getElementById('completeSub').textContent = `You've finished all ${total} shortcuts in this category.`;
+  document.getElementById('completeStars').textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+  document.getElementById('cstatCorrect').textContent = tutCorrect;
+  document.getElementById('cstatSkipped').textContent = tutSkipped;
+  document.getElementById('cstatAccuracy').textContent = acc + '%';
+
+  showSection('tutComplete');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Challenge Setup
+// ════════════════════════════════════════════════════════════════════════════
+
+let chalDiff = 'easy';
+let chalActiveCats = new Set(CATEGORIES.map(c => c.id));
+let challengeQueue = [];
+
+function buildChalSetup() {
+  // Difficulty cards
+  document.querySelectorAll('.diff-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.diff-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      chalDiff = card.dataset.diff;
+      // Hard = all cats forced
+      if (chalDiff === 'hard') {
+        chalActiveCats = new Set(CATEGORIES.map(c => c.id));
+        document.querySelectorAll('.chal-cat-toggle').forEach(b => { b.classList.add('on'); b.disabled = true; });
+      } else {
+        document.querySelectorAll('.chal-cat-toggle').forEach(b => b.disabled = false);
+        // Restore
+        document.querySelectorAll('.chal-cat-toggle').forEach(b => {
+          b.classList.toggle('on', chalActiveCats.has(b.dataset.cat));
+        });
+      }
+    });
+  });
+
+  // Category toggles
+  const grid = document.getElementById('chalCatGrid');
+  grid.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'chal-cat-toggle on';
+    btn.dataset.cat = cat.id;
+    btn.textContent = `${cat.icon} ${cat.en}`;
+    btn.addEventListener('click', () => {
+      if (chalDiff === 'hard') return;
+      if (chalActiveCats.has(cat.id)) {
+        if (chalActiveCats.size <= 1) return; // keep at least one
+        chalActiveCats.delete(cat.id);
+        btn.classList.remove('on');
+      } else {
+        chalActiveCats.add(cat.id);
+        btn.classList.add('on');
+      }
+    });
+    grid.appendChild(btn);
+  });
+}
+
+function startChallenge() {
+  const pool = SHORTCUTS.filter(s => chalActiveCats.has(s.category) && !s.isSpecial);
+  if (chalDiff === 'hard') {
+    // Shuffle
+    challengeQueue = [...pool].sort(() => Math.random() - 0.5);
+  } else {
+    challengeQueue = [...pool].sort(() => Math.random() - 0.5);
+  }
+  startChallengeWithQueue(chalDiff);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Challenge Active
+// ════════════════════════════════════════════════════════════════════════════
+
+const DIFF_TIMES = { easy: 8000, medium: 5000, hard: 3000 };
+const POINTS_BASE = { easy: 100, medium: 150, hard: 250 };
+
+let chalScore = 0;
+let chalStreak = 0;
+let chalLives = 3;
+let chalQIndex = 0;
+let chalQueue_ = [];
+let chalDiff_ = 'easy';
+let chalMisses = {}; // id -> miss count
+let timerInterval = null;
+let timerStart = 0;
+let timerDuration = 0;
+let chalListening = false;
+let chalHandler = null;
+let chalLocked = false; // brief lock after answer
+
+function startChallengeWithQueue(diff) {
+  chalDiff_ = diff;
+  chalQueue_ = [...challengeQueue];
+  chalScore = 0; chalStreak = 0; chalLives = 3; chalQIndex = 0;
+  chalMisses = {};
+  chalLocked = false;
+
+  // Build lives
+  const livesEl = document.getElementById('hudLives');
+  livesEl.innerHTML = '❤️❤️❤️';
+
+  updateHUD();
+  showSection('chalActive');
+  loadQuestion();
+}
+
+function updateHUD() {
+  document.getElementById('hudScore').textContent = chalScore.toLocaleString();
+  document.getElementById('hudStreakNum').textContent = chalStreak;
+  const mult = getMultiplier();
+  document.getElementById('hudMult').textContent = `×${mult}`;
+  document.getElementById('hudQCount').textContent = `${chalQIndex} / ${chalQueue_.length}`;
+
+  const livesEl = document.getElementById('hudLives');
+  livesEl.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const span = document.createElement('span');
+    span.className = 'life' + (i >= chalLives ? ' lost' : '');
+    span.textContent = i >= chalLives ? '🤍' : '❤️';
+    livesEl.appendChild(span);
+  }
+}
+
+function getMultiplier() {
+  if (chalStreak >= 10) return 3;
+  if (chalStreak >= 5)  return 2;
+  if (chalStreak >= 3)  return 1.5;
+  return 1;
+}
+
+function loadQuestion() {
+  if (chalQIndex >= chalQueue_.length || chalLives <= 0) {
+    endChallenge();
+    return;
+  }
+
+  const s = chalQueue_[chalQIndex];
+  chalLocked = false;
+
+  // Card reset
+  const card = document.getElementById('questionCard');
+  card.className = 'question-card';
+
+  const cat = CATEGORIES.find(c => c.id === s.category);
+  document.getElementById('qCatBadge').innerHTML = `<span class="badge badge-cat">${cat.icon} ${cat.en}</span>`;
+  document.getElementById('qAction').textContent = s.label.en;
+  document.getElementById('qActionZH').textContent = s.label.zh;
+
+  const feedbackEl = document.getElementById('qFeedbackKeys');
+  feedbackEl.innerHTML = '';
+  feedbackEl.classList.remove('visible');
+
+  updateHUD();
+
+  // Timer
+  startTimer(s);
+  registerChalHandler(s);
+}
+
+function startTimer(s) {
+  clearTimer();
+  timerDuration = DIFF_TIMES[chalDiff_];
+  timerStart = Date.now();
+
+  const bar = document.getElementById('timerBar');
+  bar.style.transition = 'none';
+  bar.style.width = '100%';
+  bar.className = 'timer-bar';
+  void bar.offsetWidth;
+
+  bar.style.transition = `width ${timerDuration}ms linear`;
+  bar.style.width = '0%';
+
+  // Urgent class at 40%
+  timerInterval = setInterval(() => {
+    const elapsed = Date.now() - timerStart;
+    const pct = 1 - (elapsed / timerDuration);
+    if (pct < 0.4) bar.className = 'timer-bar urgent';
+    if (elapsed >= timerDuration) {
+      clearTimer();
+      if (!chalLocked) onChalTimeout(s);
+    }
+  }, 100);
+}
+
+function clearTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function registerChalHandler(shortcut) {
+  if (chalHandler) document.removeEventListener('keydown', chalHandler, true);
+  chalHandler = (e) => {
+    if (MOD_KEYS.has(e.key)) return;
+    if (chalLocked) return;
+    e.preventDefault(); e.stopPropagation();
+    if (matchesShortcut(e, shortcut.keys)) {
+      onChalCorrect(shortcut);
+    } else {
+      onChalWrong(shortcut, e);
+    }
+  };
+  document.addEventListener('keydown', chalHandler, true);
+}
+
+function onChalCorrect(shortcut) {
+  chalLocked = true;
+  clearTimer();
+  if (chalHandler) document.removeEventListener('keydown', chalHandler, true);
+
+  chalStreak++;
+  const mult = getMultiplier();
+  const pts = Math.round(POINTS_BASE[chalDiff_] * mult);
+  chalScore += pts;
+
+  recordResult(shortcut.id, true);
+
+  const card = document.getElementById('questionCard');
+  card.classList.add('correct');
+
+  showFeedbackKeys(shortcut, 'correct');
+  flashScore(`+${pts}`, '#10b981');
+
+  const streakEl = document.getElementById('hudStreak');
+  streakEl.classList.remove('bump');
+  void streakEl.offsetWidth;
+  streakEl.classList.add('bump');
+
+  updateHUD();
+  chalQIndex++;
+  setTimeout(() => loadQuestion(), 800);
+}
+
+function onChalWrong(shortcut, e) {
+  chalLocked = true;
+  clearTimer();
+  if (chalHandler) document.removeEventListener('keydown', chalHandler, true);
+
+  chalStreak = 0;
+  chalLives--;
+  chalMisses[shortcut.id] = (chalMisses[shortcut.id] || 0) + 1;
+  recordResult(shortcut.id, false);
+
+  const card = document.getElementById('questionCard');
+  card.classList.add('wrong');
+
+  showFeedbackKeys(shortcut, 'wrong');
+  updateHUD();
+
+  if (chalLives <= 0) {
+    setTimeout(() => endChallenge(), 1200);
+  } else {
+    chalQIndex++;
+    setTimeout(() => loadQuestion(), 1200);
+  }
+}
+
+function onChalTimeout(shortcut) {
+  chalLocked = true;
+  if (chalHandler) document.removeEventListener('keydown', chalHandler, true);
+
+  chalStreak = 0;
+  chalLives--;
+  chalMisses[shortcut.id] = (chalMisses[shortcut.id] || 0) + 1;
+  recordResult(shortcut.id, false);
+
+  const card = document.getElementById('questionCard');
+  card.classList.add('wrong');
+  showFeedbackKeys(shortcut, 'wrong');
+  updateHUD();
+
+  if (chalLives <= 0) {
+    setTimeout(() => endChallenge(), 1200);
+  } else {
+    chalQIndex++;
+    setTimeout(() => loadQuestion(), 1200);
+  }
+}
+
+function showFeedbackKeys(shortcut, state) {
+  const el = document.getElementById('qFeedbackKeys');
+  el.innerHTML = (state === 'wrong' ? '✅ Answer: ' : '') + keysHtml(shortcut.display, shortcut.isSpecial);
+  el.classList.add('visible');
+  el.querySelectorAll('kbd').forEach(k => {
+    k.className = state === 'correct' ? 'success-lit' : 'error-lit';
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Challenge End
+// ════════════════════════════════════════════════════════════════════════════
+
+function endChallenge() {
+  clearTimer();
+  if (chalHandler) document.removeEventListener('keydown', chalHandler, true);
+
+  const total = chalQueue_.length;
+  const answered = chalQIndex;
+  const missed = Object.values(chalMisses).reduce((a, b) => a + b, 0);
+  const correct = answered - missed;
+  const acc = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+
+  // Rank
+  let rank, title, sub;
+  if (acc >= 95 && chalLives > 0)   { rank = '🏆'; title = 'Legendary!'; sub = '传奇 — Nearly flawless. You\'ve mastered these shortcuts.'; }
+  else if (acc >= 80)               { rank = '🥇'; title = 'Excellent!'; sub = '优秀 — Strong performance across the board.'; }
+  else if (acc >= 60)               { rank = '🥈'; title = 'Good Job!'; sub = '良好 — Getting there. Focus on the weak spots below.'; }
+  else                              { rank = '💪'; title = 'Keep Practicing'; sub = '继续练习 — Every expert was once a beginner.'; }
+
+  document.getElementById('endRank').textContent = rank;
+  document.getElementById('endTitle').textContent = title;
+  document.getElementById('endSub').textContent = sub;
+
+  document.getElementById('endStats').innerHTML = `
+    <div class="end-stat"><div class="end-stat-num" style="color:var(--accent)">${chalScore.toLocaleString()}</div><div class="end-stat-label">Score</div></div>
+    <div class="end-stat"><div class="end-stat-num" style="color:var(--success)">${correct}</div><div class="end-stat-label">Correct</div></div>
+    <div class="end-stat"><div class="end-stat-num" style="color:var(--accent)">${acc}%</div><div class="end-stat-label">Accuracy</div></div>
+    <div class="end-stat"><div class="end-stat-num" style="color:var(--warn)">${answered}</div><div class="end-stat-label">Answered</div></div>
+  `;
+
+  // Weak spots
+  const weakSection = document.getElementById('weakSpotsSection');
+  const weakIds = Object.entries(chalMisses).filter(([,v]) => v > 0).sort((a,b) => b[1]-a[1]).slice(0,5);
+  if (weakIds.length > 0) {
+    weakSection.innerHTML = `<div class="weak-spots-title">⚠️ Shortcuts to practice more:</div>` +
+      weakIds.map(([id, missCnt]) => {
+        const s = SHORTCUTS.find(x => x.id === id);
+        if (!s) return '';
+        return `<div class="weak-spot-item">
+          <span class="weak-spot-label">${s.label.en}</span>
+          <span class="weak-spot-miss">${missCnt} miss${missCnt>1?'es':''}</span>
+        </div>`;
+      }).join('');
+  } else {
+    weakSection.innerHTML = '';
+  }
+
+  showSection('chalEnd');
+  checkWeakBtn();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Init
+// ════════════════════════════════════════════════════════════════════════════
+
+buildTutCatGrid();
+buildChalSetup();
+checkWeakBtn();
+
+// Handle ?shortcut= from wiki practice button
+const params = new URLSearchParams(location.search);
+if (params.get('shortcut')) {
+  const s = SHORTCUTS.find(x => x.id === params.get('shortcut'));
+  if (s) {
+    tutCatId = s.category;
+    // Pre-filter to just that shortcut
+    showSection('tutSetup');
+    setTimeout(() => {
+      document.querySelector(`[data-cat-id="${tutCatId}"]`)?.classList.add('selected');
+    }, 50);
+  }
+}
+</script>
+</body>
+</html>

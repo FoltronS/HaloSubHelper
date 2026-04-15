@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Halofun Shortcut Trainer</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* ── Landing-specific styles ─────────────────────────────────────────────── */
+body { overflow-x: hidden; }
+
+/* Animated background grid */
+.bg-grid {
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+.bg-glow {
+  position: fixed; z-index: 0; pointer-events: none;
+  border-radius: 50%; filter: blur(80px); opacity: 0.18;
+}
+.bg-glow-1 { width: 500px; height: 500px; background: var(--accent); top: -10%; left: -5%; }
+.bg-glow-2 { width: 400px; height: 400px; background: var(--accent2); bottom: 0; right: -5%; }
+
+/* Hero */
+.hero {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: calc(100vh - 60px);
+  text-align: center;
+  padding: 4rem 1.5rem 6rem;
+}
+
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 99px;
+  background: rgba(99,102,241,0.12);
+  border: 1px solid rgba(99,102,241,0.25);
+  font-size: 0.8rem; font-weight: 600; color: #a5b4fc;
+  margin-bottom: 1.5rem;
+  animation: fadeInUp 0.5s ease 0.1s both;
+}
+
+.hero h1 {
+  margin-bottom: 1rem;
+  animation: fadeInUp 0.5s ease 0.2s both;
+}
+.hero h1 .zh { display: block; font-size: 0.55em; color: var(--text2); font-weight: 400; margin-top: 0.2rem; letter-spacing: 0.05em; }
+
+.hero-desc {
+  max-width: 560px;
+  color: var(--text2); font-size: 1.05rem; line-height: 1.7;
+  margin-bottom: 0.5rem;
+  animation: fadeInUp 0.5s ease 0.3s both;
+}
+.hero-desc-zh {
+  max-width: 460px; font-size: 0.9rem; color: var(--text3);
+  margin-bottom: 2.5rem;
+  animation: fadeInUp 0.5s ease 0.35s both;
+}
+
+.hero-stats {
+  display: flex; gap: 2rem; justify-content: center;
+  margin-bottom: 3rem;
+  animation: fadeInUp 0.5s ease 0.4s both;
+}
+.stat { text-align: center; }
+.stat-num { font-size: 1.8rem; font-weight: 700; line-height: 1; }
+.stat-num.g { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.stat-label { font-size: 0.75rem; color: var(--text3); margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* Cards */
+.mode-cards {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem; max-width: 760px; width: 100%;
+  animation: fadeInUp 0.5s ease 0.5s both;
+}
+
+.mode-card {
+  display: flex; flex-direction: column;
+  padding: 2rem;
+  border-radius: 16px;
+  background: rgba(26,26,53,0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  text-align: left;
+  transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+  cursor: pointer;
+  position: relative; overflow: hidden;
+}
+.mode-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--grad);
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.mode-card:hover { transform: translateY(-4px); border-color: rgba(99,102,241,0.4); box-shadow: 0 16px 48px rgba(0,0,0,0.4); }
+.mode-card:hover::before { opacity: 0.04; }
+
+.card-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; margin-bottom: 1.2rem;
+  position: relative; z-index: 1;
+}
+.card-icon.wiki-icon { background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.3); }
+.card-icon.challenge-icon { background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.3); }
+
+.card-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.3rem; position: relative; z-index: 1; }
+.card-title-zh { font-size: 0.75rem; color: var(--text3); margin-bottom: 0.8rem; position: relative; z-index: 1; }
+.card-desc { color: var(--text2); font-size: 0.9rem; line-height: 1.6; flex: 1; position: relative; z-index: 1; }
+.card-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1.2rem; position: relative; z-index: 1; }
+.card-tag {
+  padding: 0.2rem 0.6rem; border-radius: 6px;
+  font-size: 0.72rem; font-weight: 500;
+  background: rgba(255,255,255,0.06); color: var(--text2);
+}
+.card-cta {
+  display: flex; align-items: center; gap: 0.4rem;
+  margin-top: 1.5rem; font-weight: 600; font-size: 0.9rem;
+  position: relative; z-index: 1;
+  transition: gap 0.2s;
+}
+.card-cta.wiki-cta { color: #a5b4fc; }
+.card-cta.challenge-cta { color: #6ee7b7; }
+.mode-card:hover .card-cta { gap: 0.7rem; }
+
+/* Floating shortcut pills */
+.floating-pills {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+}
+.pill {
+  position: absolute;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 0.3rem 0.7rem;
+  background: rgba(26,26,53,0.6); backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: 8px; font-size: 0.75rem; color: var(--text3);
+  animation: float 4s ease-in-out infinite;
+  opacity: 0.5;
+}
+.pill kbd { font-size: 0.65em; background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); }
+
+/* Bottom wave */
+.hero-bottom {
+  position: relative; z-index: 1;
+  margin-top: 4rem; color: var(--text3); font-size: 0.8rem;
+  animation: fadeInUp 0.5s ease 0.7s both;
+}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+
+<!-- Floating decorative pills -->
+<div class="floating-pills">
+  <div class="pill" style="top:15%;left:4%;animation-delay:0s"><kbd>Shift</kbd><span>+</span><kbd>&gt;</kbd></div>
+  <div class="pill" style="top:30%;right:5%;animation-delay:1.2s"><kbd>Ctrl</kbd><span>+</span><kbd>Enter</kbd></div>
+  <div class="pill" style="top:60%;left:6%;animation-delay:0.7s"><kbd>Ctrl</kbd><span>+</span><kbd>[</kbd></div>
+  <div class="pill" style="top:75%;right:7%;animation-delay:1.8s"><kbd>Shift</kbd><span>+</span><kbd>Enter</kbd></div>
+  <div class="pill" style="top:45%;left:2%;animation-delay:2.3s"><kbd>Alt</kbd><span>+</span><kbd>Backspace</kbd></div>
+  <div class="pill" style="top:20%;right:3%;animation-delay:0.4s"><kbd>;</kbd></div>
+</div>
+
+<nav class="site-nav">
+  <div class="nav-logo">
+    <div class="logo-icon">🎬</div>
+    Halofun Trainer
+  </div>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link active">Home</a>
+    <a href="wiki.html" class="nav-link">Wiki</a>
+    <a href="challenge.html" class="nav-link">Challenge</a>
+  </div>
+</nav>
+
+<main class="hero">
+  <div class="hero-eyebrow">
+    <span>🎬</span> Halofun Subtitle Editor Helper
+  </div>
+
+  <h1>
+    <span class="gradient-text">Master Every Shortcut</span>
+    <span class="zh">掌握每一个快捷键</span>
+  </h1>
+
+  <p class="hero-desc">
+    An interactive trainer for the Halofun subtitle editing extension.
+    Learn, reference, and practice all 24 shortcuts until they're second nature.
+  </p>
+  <p class="hero-desc-zh">哈乐风字幕编辑扩展的互动训练工具，学习和练习全部24个快捷键。</p>
+
+  <div class="hero-stats">
+    <div class="stat">
+      <div class="stat-num g">24</div>
+      <div class="stat-label">Shortcuts</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num g">5</div>
+      <div class="stat-label">Categories</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num g">2</div>
+      <div class="stat-label">Languages</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num g">∞</div>
+      <div class="stat-label">Practice</div>
+    </div>
+  </div>
+
+  <div class="mode-cards">
+    <a href="wiki.html" class="mode-card">
+      <div class="card-icon wiki-icon">📖</div>
+      <div class="card-title">Shortcut Wiki</div>
+      <div class="card-title-zh">快捷键百科</div>
+      <div class="card-desc">Browse all shortcuts with detailed explanations, contextual tips, and use cases. Searchable and filterable by category.</div>
+      <div class="card-tags">
+        <span class="card-tag">Reference</span>
+        <span class="card-tag">Tips &amp; tricks</span>
+        <span class="card-tag">EN / 中文</span>
+      </div>
+      <div class="card-cta wiki-cta">Open Wiki <span>→</span></div>
+    </a>
+
+    <a href="challenge.html" class="mode-card">
+      <div class="card-icon challenge-icon">⚡</div>
+      <div class="card-title">Typing Challenge</div>
+      <div class="card-title-zh">打字挑战</div>
+      <div class="card-desc">Step-by-step tutorials and timed challenges. Press real key combos, build muscle memory, track your progress.</div>
+      <div class="card-tags">
+        <span class="card-tag">Tutorial</span>
+        <span class="card-tag">Timed quiz</span>
+        <span class="card-tag">Streaks</span>
+      </div>
+      <div class="card-cta challenge-cta">Start Training <span>→</span></div>
+    </a>
+  </div>
+
+  <div class="hero-bottom">
+    Works entirely in your browser · No account needed · Progress saved locally
+  </div>
+</main>
+
+</body>
+</html>
